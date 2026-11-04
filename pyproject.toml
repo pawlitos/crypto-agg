@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Crypto exchange aggregator"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi[standard]>=0.162.0",
+]
 
 [project.scripts]
 crypto-agg = "crypto_agg:main"
