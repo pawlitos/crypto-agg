@@ -1,0 +1,14 @@
+[project]
+name = "crypto-agg"
+version = "0.1.0"
+description = "Crypto exchange aggregator"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+crypto-agg = "crypto_agg:main"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
