@@ -5,5 +5,6 @@ description = "Crypto exchange aggregator"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "ccxt>=4.5.91",
     "fastapi[standard]>=0.162.0",
 ]
