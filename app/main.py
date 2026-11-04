@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 import ccxt.async_support as ccxt
 from fastapi import FastAPI, Request
 
+from app.timing import log_time
+
 EXCHANGES = ["kraken", "bybit", "okx"]
 PAIRS = ["BTC/USDT", "BTC/USDC", "ETH/USDT", "ETH/USDC"]
 
@@ -15,7 +17,8 @@ async def lifespan(app: FastAPI):
     try:
         for ex_id in EXCHANGES:
             clients[ex_id] = getattr(ccxt, ex_id)()
-        await asyncio.gather(*(c.load_markets() for c in clients.values()), return_exceptions=True)
+        with log_time("startup: load_markets (all exchanges)"):
+            await asyncio.gather(*(c.load_markets() for c in clients.values()), return_exceptions=True)
         yield
     finally:
         await asyncio.gather(*(c.close() for c in clients.values()), return_exceptions=True)
@@ -23,6 +26,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.middleware("http")
+async def log_request_time(request: Request, call_next):
+    """Log the total time of every HTTP request."""
+    with log_time(f"{request.method} {request.url.path}"):
+        return await call_next(request)
 
 
 async def fetch_one(exchange: ccxt.Exchange) -> dict:
