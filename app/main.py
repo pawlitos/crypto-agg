@@ -1,8 +1,9 @@
 import asyncio
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 import ccxt.async_support as ccxt
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 
 from app.schemas import ExchangePrices, PricesResponse
 from app.timing import log_time
@@ -36,6 +37,14 @@ async def log_request_time(request: Request, call_next):
         return await call_next(request)
 
 
+def get_clients(request: Request) -> dict[str, ccxt.Exchange]:
+    """Exchange clients created in lifespan, keyed by exchange id."""
+    return request.app.state.clients
+
+
+ClientsDep = Annotated[dict[str, ccxt.Exchange], Depends(get_clients)]
+
+
 async def fetch_one(exchange: ccxt.Exchange) -> dict[str, float | None]:
     await exchange.load_markets()  # no-op if already loaded; retries if startup failed
     symbols = [p for p in PAIRS if p in exchange.markets]
@@ -44,8 +53,7 @@ async def fetch_one(exchange: ccxt.Exchange) -> dict[str, float | None]:
 
 
 @app.get("/v1/prices")
-async def prices(request: Request) -> PricesResponse:
-    clients = request.app.state.clients
+async def prices(clients: ClientsDep) -> PricesResponse:
     results = await asyncio.gather(
         *(fetch_one(clients[ex_id]) for ex_id in EXCHANGES),
         return_exceptions=True,
