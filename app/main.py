@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 import ccxt.async_support as ccxt
 from fastapi import FastAPI, Request
 
+from app.schemas import ExchangePrices, PricesResponse
 from app.timing import log_time
 
 EXCHANGES = ["kraken", "bybit", "okx"]
@@ -35,7 +36,7 @@ async def log_request_time(request: Request, call_next):
         return await call_next(request)
 
 
-async def fetch_one(exchange: ccxt.Exchange) -> dict:
+async def fetch_one(exchange: ccxt.Exchange) -> dict[str, float | None]:
     await exchange.load_markets()  # no-op if already loaded; retries if startup failed
     symbols = [p for p in PAIRS if p in exchange.markets]
     tickers = await exchange.fetch_tickers(symbols)
@@ -43,10 +44,13 @@ async def fetch_one(exchange: ccxt.Exchange) -> dict:
 
 
 @app.get("/v1/prices")
-async def prices(request: Request):
+async def prices(request: Request) -> PricesResponse:
     clients = request.app.state.clients
     results = await asyncio.gather(
         *(fetch_one(clients[ex_id]) for ex_id in EXCHANGES),
         return_exceptions=True,
     )
-    return {ex_id: {"error": str(res)} if isinstance(res, Exception) else res for ex_id, res in zip(EXCHANGES, results)}
+    return PricesResponse({
+        ex_id: ExchangePrices(error=str(res)) if isinstance(res, Exception) else ExchangePrices(prices=res)
+        for ex_id, res in zip(EXCHANGES, results)
+    })
