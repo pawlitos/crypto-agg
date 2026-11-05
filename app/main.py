@@ -50,7 +50,7 @@ async def prices(request: Request) -> PricesResponse:
         *(fetch_one(clients[ex_id]) for ex_id in EXCHANGES),
         return_exceptions=True,
     )
-    return PricesResponse({
+    return {
         ex_id: ExchangePrices(error=str(res)) if isinstance(res, Exception) else ExchangePrices(prices=res)
         for ex_id, res in zip(EXCHANGES, results)
-    })
+    }

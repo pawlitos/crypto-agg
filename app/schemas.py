@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field, RootModel
+from typing import Annotated
+from pydantic import BaseModel, Field
 
 
 class ExchangePrices(BaseModel):
@@ -11,20 +12,20 @@ class ExchangePrices(BaseModel):
     )
     error: str | None = Field(
         default=None,
-        description="Error message if fetching from this exchange failed.",
+        exclude_if=lambda v: v is None,
+        description="Error message if fetching from this exchange failed; omitted on success.",
     )
 
 
-class PricesResponse(RootModel[dict[str, ExchangePrices]]):
-    """Prices keyed by exchange id."""
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "kraken": {"prices": {"BTC/USDT": 78150.5, "ETH/USDC": None}, "error": None},
-                    "okx": {"prices": {}, "error": "RequestTimeout: okx GET https://www.okx.com/api/v5/market/tickers"},
-                }
-            ]
-        }
-    }
+PricesResponse = Annotated[
+    dict[str, ExchangePrices],
+    Field(
+        description="Prices keyed by exchange id.",
+        examples=[
+            {
+                "kraken": {"prices": {"BTC/USDT": 78150.5, "ETH/USDC": None}},
+                "okx": {"prices": {}, "error": "RequestTimeout: okx GET https://www.okx.com/api/v5/market/tickers"},
+            }
+        ],
+    ),
+]
