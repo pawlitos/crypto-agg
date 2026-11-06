@@ -8,3 +8,6 @@ dependencies = [
     "ccxt>=4.5.91",
     "fastapi[standard]>=0.162.0",
 ]
+
+[tool.pyright]
+typeCheckingMode = "standard"
