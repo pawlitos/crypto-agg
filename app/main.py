@@ -1,8 +1,10 @@
 import asyncio
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Annotated
+from typing import Annotated, cast
 
 import ccxt.async_support as ccxt
+from ccxt.base.types import Ticker, Tickers
 from fastapi import Depends, FastAPI, Request
 
 from app.schemas import ExchangePrices, PricesResponse
@@ -46,10 +48,20 @@ ClientsDep = Annotated[dict[str, ccxt.Exchange], Depends(get_clients)]
 
 
 async def fetch_one(exchange: ccxt.Exchange) -> dict[str, float | None]:
-    await exchange.load_markets()  # no-op if already loaded; retries if startup failed
-    symbols = [p for p in PAIRS if p in exchange.markets]
-    tickers = await exchange.fetch_tickers(symbols)
-    return {p: tickers.get(p, {}).get("last") for p in PAIRS}
+    markets = await exchange.load_markets()  # cached after the first call; retries if startup failed
+    symbols = [p for p in PAIRS if p in markets]
+    # ccxt's base Exchange.fetch_tickers only raises NotSupported (each exchange overrides it),
+    # so type checkers think it never returns. Re-declare it with its real return type.
+    fetch_tickers = cast(Callable[[list[str]], Awaitable[Tickers]], exchange.fetch_tickers)
+    tickers = await fetch_tickers(symbols)
+    return {p: last_price(tickers.get(p)) for p in PAIRS}
+
+
+def last_price(ticker: Ticker | None) -> float | None:
+    """Last traded price as float; ccxt types it loosely (str, int, Decimal, ...)."""
+    if ticker is None or ticker["last"] is None:
+        return None
+    return float(ticker["last"])
 
 
 @app.get("/v1/prices")
@@ -58,7 +70,12 @@ async def prices(clients: ClientsDep) -> PricesResponse:
         *(fetch_one(clients[ex_id]) for ex_id in EXCHANGES),
         return_exceptions=True,
     )
-    return {
-        ex_id: ExchangePrices(error=str(res)) if isinstance(res, Exception) else ExchangePrices(prices=res)
-        for ex_id, res in zip(EXCHANGES, results)
-    }
+    out: dict[str, ExchangePrices] = {}
+    for ex_id, res in zip(EXCHANGES, results):
+        if isinstance(res, Exception):
+            out[ex_id] = ExchangePrices(error=str(res))
+        elif isinstance(res, BaseException):
+            raise res  # e.g. CancelledError when the request is cancelled: don't swallow it
+        else:
+            out[ex_id] = ExchangePrices(prices=res)
+    return out
