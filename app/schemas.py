@@ -13,7 +13,6 @@ class ExchangePrices(BaseModel):
             "Last traded price per pair from the last successful fetch; null if the exchange "
             "doesn't list the pair. Kept (possibly stale) when a later fetch fails."
         ),
-        examples=[{"BTC/USDT": 78150.5, "ETH/USDC": None}],
     )
     updated_at: datetime | None = Field(
         default=None,
@@ -40,6 +39,11 @@ PricesResponse = Annotated[
                     "prices": {"BTC/USDT": 78149.9},
                     "updated_at": "2026-11-06T11:59:50Z",
                     "error": "RequestTimeout: okx GET https://www.okx.com/api/v5/market/tickers",
+                },
+                "bybit": {
+                    "prices": {},
+                    "updated_at": None,
+                    "error": "ExchangeNotAvailable: bybit GET https://api.bybit.com/v5/market/instruments-info",
                 },
             }
         ],
