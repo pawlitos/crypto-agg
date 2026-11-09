@@ -5,7 +5,18 @@ import ccxt.async_support as ccxt
 from ccxt.base.types import Ticker, Tickers
 
 EXCHANGES = ["kraken", "bybit", "okx"]
-PAIRS = ["BTC/USDT", "BTC/USDC", "ETH/USDT", "ETH/USDC"]
+PAIRS = [
+    "BTC/USDC",
+    "ETH/USDC",
+    "XRP/USDC",
+    "BNB/USDC",
+    "SOL/USDC",
+    "DOGE/USDC",
+    "TRX/USDC",
+    "ADA/USDC",
+    "HYPE/USDC",
+    "LINK/USDC",
+]
 
 
 async def fetch_one(exchange: ccxt.Exchange) -> dict[str, float | None]:

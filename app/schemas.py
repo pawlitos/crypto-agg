@@ -30,17 +30,16 @@ class PricesResponse(BaseModel):
         examples=[
             {
                 "kraken": {
-                    "prices": {"BTC/USDT": 78150.5, "ETH/USDC": None},
+                    "prices": {"BTC/USDC": 74191.0, "ETH/USDC": 2106.21, "SOL/USDC": 86.22},
                     "updated_at": 1793966405,
                 },
                 "okx": {
-                    "prices": {"BTC/USDT": 78149.9},
+                    "prices": {"BTC/USDC": 74222.9, "ETH/USDC": 2107.63, "SOL/USDC": 86.23},
                     "updated_at": 1793966390,
                     "error": "RequestTimeout: okx GET https://www.okx.com/api/v5/market/tickers",
                 },
                 "bybit": {
                     "prices": {},
-                    "updated_at": None,
                     "error": "ExchangeNotAvailable: bybit GET https://api.bybit.com/v5/market/instruments-info",
                 },
             }
