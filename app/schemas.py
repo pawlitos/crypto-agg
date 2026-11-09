@@ -1,5 +1,3 @@
-from typing import Annotated
-
 from pydantic import BaseModel, Field
 
 
@@ -24,9 +22,10 @@ class ExchangePrices(BaseModel):
     )
 
 
-PricesResponse = Annotated[
-    dict[str, ExchangePrices],
-    Field(
+class PricesResponse(BaseModel):
+    """Latest prices from every exchange."""
+
+    exchanges: dict[str, ExchangePrices] = Field(
         description="Prices keyed by exchange id.",
         examples=[
             {
@@ -46,5 +45,4 @@ PricesResponse = Annotated[
                 },
             }
         ],
-    ),
-]
+    )

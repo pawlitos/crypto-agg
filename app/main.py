@@ -33,4 +33,4 @@ CollectorDep = Annotated[Collector, Depends(get_collector)]
 
 @app.get("/v1/prices")
 async def prices(collector: CollectorDep) -> PricesResponse:
-    return collector.snapshot()
+    return PricesResponse(exchanges=collector.snapshot())
