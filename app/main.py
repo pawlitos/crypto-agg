@@ -4,8 +4,8 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, Request
 
 from app.collector import Collector
+from app.middlewares import log_request_time
 from app.schemas import PricesResponse
-from app.timing import log_time
 
 
 @asynccontextmanager
@@ -20,13 +20,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-
-
-@app.middleware("http")
-async def log_request_time(request: Request, call_next):
-    """Log the total time of every HTTP request."""
-    with log_time(f"{request.method} {request.url.path}"):
-        return await call_next(request)
+app.middleware("http")(log_request_time)
 
 
 def get_collector(request: Request) -> Collector:
