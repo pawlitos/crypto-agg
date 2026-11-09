@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Annotated
 
 from pydantic import BaseModel, Field
@@ -14,9 +13,9 @@ class ExchangePrices(BaseModel):
             "doesn't list the pair. Kept (possibly stale) when a later fetch fails."
         ),
     )
-    updated_at: datetime | None = Field(
+    updated_at: int | None = Field(
         default=None,
-        description="UTC time of the last successful fetch; null until the first one succeeds.",
+        description="Unix timestamp (seconds) of the last successful fetch; null until the first one succeeds.",
     )
     error: str | None = Field(
         default=None,
@@ -33,11 +32,11 @@ PricesResponse = Annotated[
             {
                 "kraken": {
                     "prices": {"BTC/USDT": 78150.5, "ETH/USDC": None},
-                    "updated_at": "2026-11-06T12:00:05Z",
+                    "updated_at": 1793966405,
                 },
                 "okx": {
                     "prices": {"BTC/USDT": 78149.9},
-                    "updated_at": "2026-11-06T11:59:50Z",
+                    "updated_at": 1793966390,
                     "error": "RequestTimeout: okx GET https://www.okx.com/api/v5/market/tickers",
                 },
                 "bybit": {

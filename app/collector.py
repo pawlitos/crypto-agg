@@ -1,5 +1,5 @@
 import asyncio
-from datetime import UTC, datetime
+import time
 from typing import ClassVar
 
 import ccxt.async_support as ccxt
@@ -32,7 +32,7 @@ class Collector:
         while True:
             try:
                 prices = await fetch_one(exchange)
-                self.state[ex_id] = ExchangePrices(prices=prices, updated_at=datetime.now(UTC))
+                self.state[ex_id] = ExchangePrices(prices=prices, updated_at=int(time.time()))
             except Exception as e:  # noqa: BLE001 - one failing exchange must not kill the loop; CancelledError still propagates
                 prev = self.state[ex_id]
                 self.state[ex_id] = prev.model_copy(update={"error": f"{type(e).__name__}: {e}"})
