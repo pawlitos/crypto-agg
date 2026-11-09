@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Path, Request
 
 from app.collector import Collector
+from app.exchanges import PAIRS
 from app.middlewares import log_request_time
-from app.schemas import PricesResponse
+from app.schemas import ExchangePairPrice, PairPricesResponse, PricesResponse
 
 
 @asynccontextmanager
@@ -34,3 +35,21 @@ CollectorDep = Annotated[Collector, Depends(get_collector)]
 @app.get("/v1/prices")
 async def prices(collector: CollectorDep) -> PricesResponse:
     return PricesResponse(exchanges=collector.snapshot())
+
+
+@app.get("/v1/prices/{base}/{quote}", responses={404: {"description": "Pair is not tracked."}})
+async def pair_prices(
+    base: Annotated[str, Path(description="Base asset, e.g. BTC (case-insensitive).")],
+    quote: Annotated[str, Path(description="Quote asset, e.g. USDC (case-insensitive).")],
+    collector: CollectorDep,
+) -> PairPricesResponse:
+    pair = f"{base}/{quote}".upper()
+    if pair not in PAIRS:
+        raise HTTPException(status_code=404, detail=f"Pair {pair} is not tracked.")
+    return PairPricesResponse(
+        pair=pair,
+        prices=[
+            ExchangePairPrice(exchange=ex_id, price=ex.prices.get(pair), updated_at=ex.updated_at, error=ex.error)
+            for ex_id, ex in collector.snapshot().items()
+        ],
+    )
